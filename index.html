@@ -52,21 +52,40 @@
         var numLi = num.children;
         var btn = document.getElementById("btn");
 
+        var numBox = ["?","?","?","?","?","?"];
+
         //console.log(numLi[0],btn);
         //console.log(Math.ceil((Math.random()*6)));
         //console.log(numLi[0].innerText);
         
         btn.addEventListener("click",function(e){
             e.preventDefault();
+            var min;
+
+            //1~45중복없이 램덤으로 6개
             for(var i=0; i<numLi.length; i++){
-                numLi[i].innerText = Math.ceil((Math.random()*45))
+                numBox[i] = Math.ceil((Math.random()*45))
                 
                 for(var j=0; j<i; j++){
-                    if(numLi[i].innerText == numLi[j].innerText){
+                    if(numBox[i] == numBox[j]){
                         i--;
                         break;
                     }
                 }
+            }
+            //작은수부터 왼쪽으로 정렬
+            for(var i=0; i<numLi.length-1; i++){
+                for(var j=i+1; j<numLi.length; j++){
+                    if(numBox[i] > numBox[j]){
+                        min = numBox[j];
+                        numBox[j] = numBox[i];
+                        numBox[i] = min;
+                    }
+
+                }
+            }
+            for(var i=0; i < numLi.length; i++){
+                numLi[i].innerText = numBox[i]; 
             }
         });
 
