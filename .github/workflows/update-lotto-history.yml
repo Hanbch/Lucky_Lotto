@@ -3,8 +3,8 @@ name: Update lotto history
 
 on:
   schedule:
-    # 매주 목요일 07:35 UTC = 목요일 16:35 KST
-    - cron: "02 8 * * 4"
+    # 매주 목요일 08:21 UTC = 목요일 17:21 KST
+    - cron: "21 8 * * 4"
   workflow_dispatch: # 수동 실행용
 
 permissions:
