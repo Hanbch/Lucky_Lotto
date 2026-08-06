@@ -289,6 +289,7 @@
 		</section>
 	</main>
 
+	<script src="lotto_history_sync.js"></script>
 	<script>
 	(function () {
 		var MAX = 45;
@@ -387,10 +388,11 @@
 			}).join("");
 		}
 
-		function setMetaReady() {
-			metaText.textContent = "역대 " + pastLatest + "회까지 " + pastCount + "개 1등 조합 제외 · 재미로만 즐기세요";
+		function setMetaReady(synced) {
+			var suffix = synced ? " · 최신 동기화" : "";
+			metaText.textContent = "역대 " + pastLatest + "회까지 " + pastCount + "개 1등 조합 제외" + suffix + " · 재미로만 즐기세요";
 			btnGenerate.disabled = false;
-			btnGenerate.textContent = "번호 생성";
+			btnGenerate.textContent = current.length ? "다시 생성" : "번호 생성";
 			pastReady = true;
 		}
 
@@ -401,19 +403,75 @@
 			pastCount = Object.keys(pastSet).length;
 		}
 
+		function loadExtraCache() {
+			try {
+				var raw = localStorage.getItem("lotto_past_extra");
+				if (!raw) return;
+				var data = JSON.parse(raw);
+				if (data && data.draws) ingestDraws(data.draws);
+				if (data && data.latest && data.latest > pastLatest) pastLatest = data.latest;
+			} catch (e) {}
+		}
+
+		function saveExtraCache(added, latest) {
+			try {
+				var raw = localStorage.getItem("lotto_past_extra");
+				var data = raw ? JSON.parse(raw) : { draws: [], latest: 0 };
+				if (!data.draws) data.draws = [];
+				(added || []).forEach(function (k) {
+					if (data.draws.indexOf(k) < 0) data.draws.push(k);
+				});
+				data.latest = Math.max(data.latest || 0, latest || 0);
+				localStorage.setItem("lotto_past_extra", JSON.stringify(data));
+			} catch (e) {}
+		}
+
+		function syncLatest(fromNo) {
+			if (typeof syncLottoHistory !== "function") {
+				return Promise.reject(new Error("sync_script_missing"));
+			}
+			return syncLottoHistory(fromNo).then(function (data) {
+				if (!data || !data.ok) throw new Error((data && data.error) || "sync_fail");
+				if (data.added && data.added.length) {
+					ingestDraws(data.added);
+					saveExtraCache(data.added, data.latest);
+				}
+				if (data.latest) pastLatest = data.latest;
+				pastCount = Object.keys(pastSet).length;
+				setMetaReady(true);
+				return data;
+			});
+		}
+
 		function loadPastNumbers() {
-			return fetch("/Lucky_Lotto/lotto_history.json?_=" + Date.now())
+			var historyUrl = "lotto_history.json?_=" + Date.now();
+			return fetch(historyUrl)
 				.then(function (res) {
-					if (!res.ok) throw new Error("load fail");
+					if (!res.ok) throw new Error("HTTP " + res.status);
 					return res.json();
 				})
 				.then(function (data) {
 					ingestDraws(data.draws || []);
 					pastLatest = data.latest || pastCount;
-					setMetaReady();
-					return data;
+					loadExtraCache();
+					pastCount = Object.keys(pastSet).length;
+					setMetaReady(false);
+					metaText.textContent = "역대 " + pastLatest + "회 기준 로드 · 최신 회차 확인 중…";
+					return syncLatest(pastLatest).catch(function (err) {
+						console.warn("lotto sync fail:", err);
+						setMetaReady(false);
+					});
 				})
-				.catch(function () {
+				.catch(function (err) {
+					console.warn("lotto_history load fail:", err);
+					loadExtraCache();
+					pastCount = Object.keys(pastSet).length;
+					if (pastCount > 0) {
+						setMetaReady(false);
+						return syncLatest(pastLatest).catch(function () {
+							setMetaReady(false);
+						});
+					}
 					metaText.textContent = "역대 데이터 로드 실패 — 제외 없이 생성됩니다";
 					btnGenerate.disabled = false;
 					btnGenerate.textContent = "번호 생성";
