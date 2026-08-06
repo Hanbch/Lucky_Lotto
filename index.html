@@ -1,81 +1,491 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<title>로또번호 자동 생성기</title>
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=Edge">
-<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<link rel="stylesheet" href="css/reset.css">
-<link rel="stylesheet" href="css/style.css">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<title>LOTTO — 번호 자동생성</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+	<style>
+		:root {
+			--ink: #0c1220;
+			--ink-soft: #1a2438;
+			--gold: #f0c14b;
+			--gold-deep: #c9921a;
+			--cream: #f7f1e3;
+			--ball-y: #f5c518;
+			--ball-b: #3b82f6;
+			--ball-r: #e11d48;
+			--ball-g: #16a34a;
+			--ball-k: #1f2937;
+			--muted: rgba(247, 241, 227, 0.55);
+		}
 
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+
+		html, body {
+			min-height: 100%;
+			font-family: "Outfit", sans-serif;
+			color: var(--cream);
+			background: var(--ink);
+		}
+
+		body {
+			background:
+				radial-gradient(ellipse 80% 50% at 50% -10%, rgba(240, 193, 75, 0.22), transparent 55%),
+				radial-gradient(ellipse 60% 40% at 100% 100%, rgba(59, 130, 246, 0.12), transparent 50%),
+				radial-gradient(ellipse 50% 35% at 0% 80%, rgba(225, 29, 72, 0.1), transparent 45%),
+				linear-gradient(165deg, #0a0f1a 0%, #121a2c 45%, #0c1220 100%);
+			overflow-x: hidden;
+		}
+
+		.noise {
+			pointer-events: none;
+			position: fixed;
+			inset: 0;
+			opacity: 0.04;
+			background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+			z-index: 0;
+		}
+
+		.wrap {
+			position: relative;
+			z-index: 1;
+			min-height: 100vh;
+			min-height: 100dvh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 2.5rem 1.25rem 3rem;
+			text-align: center;
+		}
+
+		.brand {
+			font-family: "Bebas Neue", sans-serif;
+			font-size: clamp(4.5rem, 18vw, 8rem);
+			letter-spacing: 0.06em;
+			line-height: 0.9;
+			background: linear-gradient(180deg, #fff6d6 0%, var(--gold) 45%, var(--gold-deep) 100%);
+			-webkit-background-clip: text;
+			background-clip: text;
+			color: transparent;
+			text-shadow: 0 0 40px rgba(240, 193, 75, 0.25);
+			animation: brandIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+		}
+
+		.tag {
+			margin-top: 0.75rem;
+			font-size: 0.95rem;
+			font-weight: 500;
+			letter-spacing: 0.04em;
+			color: var(--muted);
+			animation: fadeUp 0.7s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+		}
+
+		.balls {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 0.65rem;
+			margin: 2.75rem 0 2rem;
+			min-height: 4.25rem;
+			animation: fadeUp 0.7s 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+		}
+
+		.ball {
+			width: 3.6rem;
+			height: 3.6rem;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-family: "Bebas Neue", sans-serif;
+			font-size: 1.65rem;
+			letter-spacing: 0.02em;
+			color: #fff;
+			box-shadow:
+				inset 0 -6px 12px rgba(0,0,0,0.28),
+				inset 0 4px 8px rgba(255,255,255,0.35),
+				0 8px 18px rgba(0,0,0,0.35);
+			transform: translateY(24px) scale(0.6);
+			opacity: 0;
+		}
+
+		.ball.show {
+			animation: ballPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+		}
+
+		.ball.c1 { background: radial-gradient(circle at 32% 28%, #ffe066, var(--ball-y) 55%, #b8860b); color: #1a1200; }
+		.ball.c2 { background: radial-gradient(circle at 32% 28%, #93c5fd, var(--ball-b) 55%, #1d4ed8); }
+		.ball.c3 { background: radial-gradient(circle at 32% 28%, #fda4af, var(--ball-r) 55%, #9f1239); }
+		.ball.c4 { background: radial-gradient(circle at 32% 28%, #86efac, var(--ball-g) 55%, #15803d); }
+		.ball.c5 { background: radial-gradient(circle at 32% 28%, #9ca3af, var(--ball-k) 55%, #111827); }
+
+		.actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.75rem;
+			justify-content: center;
+			animation: fadeUp 0.7s 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+		}
+
+		.btn {
+			appearance: none;
+			border: none;
+			cursor: pointer;
+			font-family: inherit;
+			font-weight: 600;
+			font-size: 1rem;
+			padding: 0.95rem 1.75rem;
+			border-radius: 999px;
+			transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+		}
+
+		.btn:active { transform: scale(0.97); }
+
+		.btn:disabled {
+			opacity: 0.55;
+			cursor: wait;
+			pointer-events: none;
+		}
+
+		.btn-primary {
+			color: #1a1200;
+			background: linear-gradient(180deg, #ffe08a, var(--gold) 40%, var(--gold-deep));
+			box-shadow: 0 10px 28px rgba(240, 193, 75, 0.35);
+		}
+
+		.btn-primary:hover {
+			box-shadow: 0 12px 32px rgba(240, 193, 75, 0.45);
+		}
+
+		.btn-primary.spinning {
+			pointer-events: none;
+			animation: pulseGlow 0.9s ease-in-out infinite;
+		}
+
+		.btn-ghost {
+			color: var(--cream);
+			background: transparent;
+			border: 1px solid rgba(247, 241, 227, 0.28);
+		}
+
+		.btn-ghost:hover {
+			background: rgba(247, 241, 227, 0.08);
+		}
+
+		.meta {
+			margin-top: 1.75rem;
+			font-size: 0.8rem;
+			color: var(--muted);
+			animation: fadeUp 0.7s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+		}
+
+		.history {
+			width: min(420px, 100%);
+			margin-top: 2.5rem;
+			text-align: left;
+			animation: fadeUp 0.7s 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+		}
+
+		.history h2 {
+			font-size: 0.75rem;
+			font-weight: 600;
+			letter-spacing: 0.12em;
+			text-transform: uppercase;
+			color: var(--muted);
+			margin-bottom: 0.75rem;
+		}
+
+		.history ul {
+			list-style: none;
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+
+		.history li {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 0.75rem;
+			padding: 0.65rem 0;
+			border-bottom: 1px solid rgba(247, 241, 227, 0.08);
+			font-size: 0.9rem;
+			font-variant-numeric: tabular-nums;
+		}
+
+		.history .nums {
+			font-weight: 600;
+			letter-spacing: 0.04em;
+		}
+
+		.history .time {
+			flex-shrink: 0;
+			font-size: 0.75rem;
+			color: var(--muted);
+		}
+
+		.history .empty {
+			color: var(--muted);
+			font-size: 0.85rem;
+			padding: 0.5rem 0;
+		}
+
+		@keyframes brandIn {
+			from { opacity: 0; transform: translateY(18px) scale(0.96); filter: blur(6px); }
+			to { opacity: 1; transform: none; filter: none; }
+		}
+
+		@keyframes fadeUp {
+			from { opacity: 0; transform: translateY(14px); }
+			to { opacity: 1; transform: none; }
+		}
+
+		@keyframes ballPop {
+			0% { opacity: 0; transform: translateY(28px) scale(0.5) rotate(-18deg); }
+			70% { opacity: 1; transform: translateY(-4px) scale(1.06) rotate(4deg); }
+			100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+		}
+
+		@keyframes pulseGlow {
+			0%, 100% { box-shadow: 0 10px 28px rgba(240, 193, 75, 0.35); }
+			50% { box-shadow: 0 10px 36px rgba(240, 193, 75, 0.65); }
+		}
+
+		@media (max-width: 380px) {
+			.ball { width: 3.1rem; height: 3.1rem; font-size: 1.4rem; }
+			.balls { gap: 0.45rem; }
+		}
+	</style>
 </head>
-
 <body>
-    <div class="wrapper">
-        <div class="container">
-            <div class="container_inner">
-                <div class="title">로또 번호 자동 생성기</div>
-                <div class="num_area">
-                    <ul id="num">
-                        <li class="num">?</li>
-                        <li class="num">?</li>
-                        <li class="num">?</li>
-                        <li class="num">?</li>
-                        <li class="num">?</li>
-                        <li class="num">?</li>
-                    </ul>
-                </div>
-                <div class="getNum_btn"  id="btn">
-                    <a href="">번호 생성하기</a>
-                </div>
-            </div>
-        </div>
-    </div>
+	<div class="noise" aria-hidden="true"></div>
+	<main class="wrap">
+		<h1 class="brand">LOTTO</h1>
+		<p class="tag">1 ~ 45 중 서로 다른 번호 6개 · 역대 1등 조합 제외</p>
 
-    <script>
-        var num = document.getElementById("num");
-        var numLi = num.children;
-        var btn = document.getElementById("btn");
+		<div class="balls" id="balls" aria-live="polite" aria-atomic="true">
+			<!-- balls injected -->
+		</div>
 
-        var numBox = ["?","?","?","?","?","?"];
+		<div class="actions">
+			<button type="button" class="btn btn-primary" id="btnGenerate" disabled>데이터 로딩 중…</button>
+			<button type="button" class="btn btn-ghost" id="btnCopy">복사</button>
+		</div>
 
-        //console.log(numLi[0],btn);
-        //console.log(Math.ceil((Math.random()*6)));
-        //console.log(numLi[0].innerText);
-        
-        btn.addEventListener("click",function(e){
-            e.preventDefault();
-            var min;
+		<p class="meta" id="metaText">역대 당첨번호 불러오는 중…</p>
 
-            //1~45중복없이 램덤으로 6개
-            for(var i=0; i<numLi.length; i++){
-                numBox[i] = Math.ceil((Math.random()*45))
-                
-                for(var j=0; j<i; j++){
-                    if(numBox[i] == numBox[j]){
-                        i--;
-                        break;
-                    }
-                }
-            }
-            //작은수부터 왼쪽으로 정렬
-            for(var i=0; i<numLi.length-1; i++){
-                for(var j=i+1; j<numLi.length; j++){
-                    if(numBox[i] > numBox[j]){
-                        min = numBox[j];
-                        numBox[j] = numBox[i];
-                        numBox[i] = min;
-                    }
+		<section class="history" aria-label="최근 생성 기록">
+			<h2>Recent</h2>
+			<ul id="historyList">
+				<li class="empty">아직 생성된 번호가 없습니다</li>
+			</ul>
+		</section>
+	</main>
 
-                }
-            }
-            for(var i=0; i < numLi.length; i++){
-                numLi[i].innerText = numBox[i]; 
-            }
-        });
+	<script>
+	(function () {
+		var MAX = 45;
+		var PICK = 6;
+		var historyMax = 5;
+		var current = [];
+		var history = [];
+		var spinning = false;
+		var pastSet = {};
+		var pastReady = false;
+		var pastLatest = 0;
+		var pastCount = 0;
 
-    </script>
+		var ballsEl = document.getElementById("balls");
+		var btnGenerate = document.getElementById("btnGenerate");
+		var btnCopy = document.getElementById("btnCopy");
+		var historyList = document.getElementById("historyList");
+		var metaText = document.getElementById("metaText");
 
+		function ballClass(n) {
+			if (n <= 10) return "c1";
+			if (n <= 20) return "c2";
+			if (n <= 30) return "c3";
+			if (n <= 40) return "c4";
+			return "c5";
+		}
+
+		function keyOf(nums) {
+			return nums.slice().sort(function (a, b) { return a - b; }).join("-");
+		}
+
+		function pickRaw() {
+			var pool = [];
+			var i, j, t;
+			for (i = 1; i <= MAX; i++) pool.push(i);
+			for (i = pool.length - 1; i > 0; i--) {
+				j = Math.floor(Math.random() * (i + 1));
+				t = pool[i];
+				pool[i] = pool[j];
+				pool[j] = t;
+			}
+			return pool.slice(0, PICK).sort(function (a, b) { return a - b; });
+		}
+
+		function pickNumbers() {
+			var nums, tries = 0;
+			do {
+				nums = pickRaw();
+				tries++;
+			} while (pastSet[keyOf(nums)] && tries < 5000);
+			return nums;
+		}
+
+		function renderBalls(nums, animate) {
+			ballsEl.innerHTML = "";
+			nums.forEach(function (n, idx) {
+				var el = document.createElement("span");
+				el.className = "ball " + ballClass(n);
+				el.textContent = n;
+				el.setAttribute("aria-label", n + "번");
+				ballsEl.appendChild(el);
+				if (animate) {
+					setTimeout(function () {
+						el.classList.add("show");
+					}, 80 + idx * 110);
+				} else {
+					el.classList.add("show");
+				}
+			});
+		}
+
+		function pad2(n) {
+			return (n < 10 ? "0" : "") + n;
+		}
+
+		function nowLabel() {
+			var d = new Date();
+			return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+		}
+
+		function renderHistory() {
+			if (!history.length) {
+				historyList.innerHTML = '<li class="empty">아직 생성된 번호가 없습니다</li>';
+				return;
+			}
+			historyList.innerHTML = history.map(function (item) {
+				return '<li><span class="nums">' + item.nums.join(" · ") + '</span><span class="time">' + item.time + '</span></li>';
+			}).join("");
+		}
+
+		function setMetaReady() {
+			metaText.textContent = "역대 " + pastLatest + "회까지 " + pastCount + "개 1등 조합 제외 · 재미로만 즐기세요";
+			btnGenerate.disabled = false;
+			btnGenerate.textContent = "번호 생성";
+			pastReady = true;
+		}
+
+		function ingestDraws(draws) {
+			(draws || []).forEach(function (k) {
+				pastSet[k] = true;
+			});
+			pastCount = Object.keys(pastSet).length;
+		}
+
+		function loadPastNumbers() {
+			return fetch("/lotto_history.json?_=" + Date.now())
+				.then(function (res) {
+					if (!res.ok) throw new Error("load fail");
+					return res.json();
+				})
+				.then(function (data) {
+					ingestDraws(data.draws || []);
+					pastLatest = data.latest || pastCount;
+					setMetaReady();
+					return data;
+				})
+				.catch(function () {
+					metaText.textContent = "역대 데이터 로드 실패 — 제외 없이 생성됩니다";
+					btnGenerate.disabled = false;
+					btnGenerate.textContent = "번호 생성";
+					pastReady = true;
+				});
+		}
+
+		function generate() {
+			if (spinning || !pastReady) return;
+			spinning = true;
+			btnGenerate.classList.add("spinning");
+			btnGenerate.textContent = "추첨 중…";
+
+			var flashCount = 0;
+			var flashTimer = setInterval(function () {
+				renderBalls(pickNumbers(), false);
+				flashCount++;
+				if (flashCount >= 8) {
+					clearInterval(flashTimer);
+					current = pickNumbers();
+					renderBalls(current, true);
+					history.unshift({ nums: current.slice(), time: nowLabel() });
+					if (history.length > historyMax) history.pop();
+					renderHistory();
+					setTimeout(function () {
+						spinning = false;
+						btnGenerate.classList.remove("spinning");
+						btnGenerate.textContent = "다시 생성";
+					}, 750);
+				}
+			}, 70);
+		}
+
+		function copyNums() {
+			if (!current.length) {
+				alert("먼저 번호를 생성해 주세요.");
+				return;
+			}
+			var text = current.join(", ");
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(text).then(function () {
+					btnCopy.textContent = "복사됨!";
+					setTimeout(function () { btnCopy.textContent = "복사"; }, 1200);
+				}).catch(function () {
+					fallbackCopy(text);
+				});
+			} else {
+				fallbackCopy(text);
+			}
+		}
+
+		function fallbackCopy(text) {
+			var ta = document.createElement("textarea");
+			ta.value = text;
+			document.body.appendChild(ta);
+			ta.select();
+			try {
+				document.execCommand("copy");
+				btnCopy.textContent = "복사됨!";
+				setTimeout(function () { btnCopy.textContent = "복사"; }, 1200);
+			} catch (e) {
+				alert(text);
+			}
+			document.body.removeChild(ta);
+		}
+
+		btnGenerate.addEventListener("click", generate);
+		btnCopy.addEventListener("click", copyNums);
+
+		ballsEl.innerHTML = "";
+		for (var i = 0; i < PICK; i++) {
+			(function (idx) {
+				var el = document.createElement("span");
+				el.className = "ball c5";
+				el.textContent = "·";
+				el.style.opacity = "0.35";
+				ballsEl.appendChild(el);
+				setTimeout(function () { el.classList.add("show"); }, 80 + idx * 90);
+			})(i);
+		}
+
+		loadPastNumbers();
+	})();
+	</script>
 </body>
 </html>
