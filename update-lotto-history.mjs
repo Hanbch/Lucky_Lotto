@@ -1,13 +1,13 @@
 /**
  * lotto_history.json 최신 회차 자동 갱신 스크립트 (GitHub Actions / Node)
- * 사용: node scripts/update-lotto-history.mjs
+ * 사용: node update-lotto-history.mjs
  */
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = __dirname;
 const HISTORY_PATH = path.join(ROOT, "lotto_history.json");
 const BASE = "https://smok95.github.io/lotto/results";
 const MAX_FETCH = 60;
