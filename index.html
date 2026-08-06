@@ -289,7 +289,7 @@
 		</section>
 	</main>
 
-	<script src="lotto_history_sync.js"></script>
+	<script src="/Lucky_Lotto/lotto_history_sync.js"></script>
 	<script>
 	(function () {
 		var MAX = 45;
@@ -444,7 +444,7 @@
 		}
 
 		function loadPastNumbers() {
-			var historyUrl = "lotto_history.json?_=" + Date.now();
+			var historyUrl = "/Lucky_Lotto/lotto_history.json?_=" + Date.now();
 			return fetch(historyUrl)
 				.then(function (res) {
 					if (!res.ok) throw new Error("HTTP " + res.status);
