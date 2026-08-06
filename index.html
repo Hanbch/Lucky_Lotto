@@ -402,7 +402,7 @@
 		}
 
 		function loadPastNumbers() {
-			return fetch("/lotto_history.json?_=" + Date.now())
+			return fetch("lotto_history.json?_=" + Date.now())
 				.then(function (res) {
 					if (!res.ok) throw new Error("load fail");
 					return res.json();
